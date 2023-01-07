@@ -1,0 +1,36 @@
+# defaults:
+#   - override hydra/job_logging: custom
+# plugins: 
+#   - filemanager
+#   - sql
+data_reader:
+  type: sql.reader
+  query_or_path: >
+    select full_name,
+        html_url,
+        homepage,
+        insert_date,
+        stargazers_count,
+        forks_count,
+        topics
+      from read_parquet('./db/repos.parquet/*/*.parquet')
+      where insert_date = (select max(insert_date) from read_parquet('./db/repos.parquet/*/*.parquet'))
+      order by stargazers_count desc
+      limit 30
+  url:  'duckdb:///:memory:'
+
+data_writer:
+  type: core.sharedmemorywriter
+  variables: top_repos
+
+transformer:
+  type: core.transformers.pipeline
+  mode: 2
+  transformers:
+    - type: core.transformers.swissknife
+      dataframe_attr: eval
+      expr: "source='top_repos'"
+
+    
+    
+

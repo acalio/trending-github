@@ -1,0 +1,17 @@
+defaults:
+  - override hydra/job_logging: custom
+plugins: 
+  - filemanager
+  - github
+  - sql
+tasks:
+  task1: "./config/dag/tasks/1_download.yaml"
+  task2: "./config/dag/tasks/2_top_repos.yaml"
+  task3: "./config/dag/tasks/3_top_per_topic.yaml"
+  task4: "./config/dag/tasks/4_write_results.yaml"
+edges: 
+  - [task1, task2]
+  - [task1, task3]
+  - [task3, task4]
+  - [task2, task4]
+  

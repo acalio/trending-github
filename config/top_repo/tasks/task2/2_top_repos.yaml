@@ -1,0 +1,18 @@
+defaults:
+  - data_reader: python
+
+data_writer:
+  type: core.sharedmemorywriter
+  variables: top_repos
+
+transformer:
+  type: core.transformers.pipeline
+  mode: 2
+  transformers:
+    - type: core.transformers.swissknife
+      dataframe_attr: eval
+      expr: "source='top_repos'"
+
+    
+    
+

@@ -1,0 +1,33 @@
+[loggers]
+keys=root
+
+[logger_root]
+handlers=screen,file
+level=NOTSET
+
+[formatters]
+keys=simple,complex
+
+[formatter_simple]
+format=%(asctime)s - %(name)s - %(levelname)s - %(message)s
+
+[formatter_complex]
+format=%(asctime)s - %(name)s - %(levelname)s - %(module)s : %(lineno)d - %(message)s
+
+[handlers]
+keys=file,screen
+
+# rotate log file at midnight keeping 5 backup copies (the oldest will be then deleted)
+[handler_file]
+class=handlers.TimedRotatingFileHandler
+interval=midnight
+backupCount=2
+formatter=complex
+level=INFO
+args=('ex.log',)
+
+[handler_screen]
+class=StreamHandler
+formatter=simple
+level=INFO
+args=(sys.stdout,)

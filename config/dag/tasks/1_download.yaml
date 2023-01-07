@@ -1,0 +1,30 @@
+# defaults:
+#   - override hydra/job_logging: custom
+# plugins: 
+#   - filemanager
+#   - github
+data_reader:
+  type: github.read
+  url: "https://api.github.com/search/repositories?q=stars:>100000+language:python&sort=stars&order=desc&per_page=100"
+  min_stars: 500
+  max_stars: 100000
+  step_size: 200
+
+data_writer:
+  type: filemanager.filewriter
+  output_path: "./db/repos.parquet"
+  write_args: 
+    index: false
+    partition_cols: insert_date_
+
+transformer:
+  type: core.transformers.pipeline
+  mode: 2
+  transformers:
+    - type: github.add_date
+      date_format: YYYY-MM-DD
+      col_name: insert_date_
+    - type: core.transformers.swissknife
+      dataframe_attr: eval
+      expr: insert_date=insert_date_
+

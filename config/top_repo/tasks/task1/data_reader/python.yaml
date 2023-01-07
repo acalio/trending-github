@@ -1,0 +1,5 @@
+type: github.read
+url: "https://api.github.com/search/repositories?q=stars:>100000+language:python&sort=stars&order=desc&per_page=100"
+min_stars: 500
+max_stars: 100000
+step_size: 200

@@ -1,0 +1,25 @@
+version: 1
+formatters:
+  simple:
+    format: '%(name)s - %(message)s'
+  complex:
+    format: '%(asctime)s - %(name)s - %(levelname)s - %(module)s : %(lineno)d - %(message)s'
+handlers:
+  screen:
+    class: rich.logging.RichHandler
+    formatter: simple
+    level: INFO
+  file:
+    class: logging.FileHandler
+    filename: ex.log
+    # interval: midnight
+    # backupCount: 2
+    formatter: complex
+    level: INFO
+    
+
+root:
+  handlers: [screen, file]
+  level: NOTSET
+
+disable_existing_loggers: false

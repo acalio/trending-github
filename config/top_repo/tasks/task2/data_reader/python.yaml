@@ -1,0 +1,15 @@
+type: sql.reader
+query_or_path: >
+  select full_name,
+      html_url,
+      homepage,
+      insert_date,
+      stargazers_count,
+      forks_count,
+      topics
+    from repos
+    where insert_date = (select max(insert_date) from repos)
+      and language = 'python'
+    order by stargazers_count desc
+    limit 50
+url:  duckdb:///repos.duckdb

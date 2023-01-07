@@ -1,0 +1,23 @@
+defaults:
+  - data_writer: python
+#   - override hydra/job_logging: custom
+# plugins: 
+#   - filemanager
+#   - sql
+data_reader:
+  type: core.sharedmemoryreader
+  variables: [top_repos_per_topic, top_repos]
+  behaviors: 
+    type: core.concat
+    instructions:
+      axis: 0
+
+transformer:
+  type: core.transformers.pipeline
+  mode: 2
+  transformers:
+    - type: core.transformers.dummy
+
+    
+    
+

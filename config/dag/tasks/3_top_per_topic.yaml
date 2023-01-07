@@ -1,0 +1,62 @@
+# defaults:
+#   - override hydra/job_logging: custom
+# plugins: 
+#   - filemanager
+#   - sql
+data_reader:
+  type: sql.reader
+  query_or_path: >
+    with t as (
+      select full_name,
+            html_url,
+            homepage,
+            insert_date,
+            stargazers_count,
+            forks_count,
+            unnest(topics) as topic
+      from read_parquet('./db/repos.parquet/*/*.parquet')
+      where insert_date = (select max(insert_date) from read_parquet('./db/repos.parquet/*/*.parquet'))
+      )
+
+      ,top10_topic as (
+      select topic, count(distinct full_name) num_repos
+      from t
+      group by topic
+      order by count(distinct full_name) desc
+      limit 10
+      )
+      ,top10_join as (
+          select t.*
+          from t join top10_topic on t.topic = top10_topic.topic
+      )
+      ,final as (
+      select *, row_number() over(partition by topic order by stargazers_count desc) as rn
+      from top10_join)
+
+      select *
+      from final
+      where rn <= 20
+  url:  'duckdb:///:memory:'
+
+
+data_writer:
+  type: core.sharedmemorywriter
+  variables: top_repos_per_topic
+
+  # type: filemanager.filewriter
+  # output_path: "./out.csv"
+  # write_args: 
+  #   index: false
+
+transformer:
+  type: core.transformers.pipeline
+  mode: 2
+  transformers:
+    - type: core.transformers.swissknife
+      dataframe_attr: eval
+      expr: "source='top_repos_topic'"
+
+
+    
+    
+

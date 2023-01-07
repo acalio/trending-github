@@ -1,0 +1,9 @@
+defaults:
+  - tasks: config
+  - edges: config
+  - override hydra/job_logging: custom
+plugins: 
+  - filemanager
+  - github
+  - sql
+  

@@ -1,0 +1,5 @@
+defaults:
+  - task1: 1_download
+  - task2: 2_top_repos
+  - task3: 3_top_per_topic
+  - task4: 4_write_results

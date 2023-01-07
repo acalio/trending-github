@@ -1,0 +1,68 @@
+defaults:
+  - data_reader: python
+
+plugins: 
+  - filemanager
+  - github
+  - sql
+
+data_writer:
+  type: filemanager.filewriter
+  output_path: "/tmp/repos.parquet"
+  write_args: 
+    index: false
+
+ctx_manager: 
+  type: sql.cmanager
+  enter_query: > 
+    create table if not exists repos (
+      insert_date date,
+      full_name varchar,
+      html_url varchar,
+      url varchar,
+      language varchar,
+      homepage varchar,
+      description varchar,
+      forks_count float,
+      stargazers_count float,
+      topics varchar[],
+      primary key(insert_date, full_name)
+    )
+  finalize_query: >
+    create or replace table repos as 
+    with new_table as (
+      select * from read_parquet('/tmp/repos.parquet') 
+    )
+    ,old_table as (
+      select a.*
+      from repos a
+        left join new_table b 
+          on a.insert_date = b.insert_date and a.full_name = b.full_name
+      where b.full_name is null 
+    )
+    select * from old_table
+    union all 
+    select * from new_table
+
+  url: duckdb:///repos.duckdb
+
+transformer:
+  type: core.transformers.pipeline
+  mode: 2
+  transformers:
+    - type: github.add_date
+      date_format: YYYY-MM-DD
+      col_name: insert_date
+    - type: core.transformers.projection
+      columns: 
+      - insert_date
+      - full_name
+      - html_url
+      - url 
+      - language
+      - homepage
+      - description
+      - forks_count
+      - stargazers_count
+      - topics
+      
