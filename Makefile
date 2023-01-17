@@ -27,7 +27,7 @@ docs_save:
 	pdoc src -o docs
 
 format:
-	find . -type f -name "*.py" -exec black {} \;
+	find . -type f -name "*.py" -exec echo {} \; -exec black {} \;
 ## Delete all compiled Python files
 clean:
 	find . -type f -name "*.py[co]" -delete

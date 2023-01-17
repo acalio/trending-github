@@ -41,6 +41,7 @@ interrogate = "^1.5.0"
 ipython-sql = "^0.4.1"
 nb-black = "^1.0.7"
 jupyter-emacskeys = "^0.2.3"
+pyinstrument = "^4.4.0"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]

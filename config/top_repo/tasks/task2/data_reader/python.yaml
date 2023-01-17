@@ -12,4 +12,4 @@ query_or_path: >
       and language = 'python'
     order by stargazers_count desc
     limit 50
-url:  duckdb:///repos.duckdb
+url: duckdb:///repos.duckdb

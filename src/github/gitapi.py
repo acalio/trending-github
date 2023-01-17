@@ -4,6 +4,8 @@ import pandas as pd
 from src.core.datamanager.base import DataReader, DataWriter
 from typing import Optional, Union, Dict, Any, List
 import logging
+import numpy as np
+from functools import partial
 import requests
 import time
 import arrow
@@ -119,6 +121,7 @@ class GitRepoReader(DataReader):
                         logger.warn("rate limit exceeded! I'm going to sleep")
                         time.sleep(60)
                         continue
+
                 if not res_dict["incomplete_results"]:
                     break
 
@@ -132,4 +135,36 @@ def add_date(
     data: pd.DataFrame, col_name: str, date_format: str
 ) -> pd.DataFrame:
     data[col_name] = arrow.now().format(date_format)
+    return data
+
+
+def get_trending_topics(
+    data: pd.DataFrame, col: str, new_col: str, exp: float, max_length: None
+) -> pd.DataFrame:
+    """Get Trending topics
+
+    Args:
+        data (pd.DataFrame):
+        col (str):
+        exp (float):
+        max_length (None):
+
+    Returns:
+        pd.DataFrame:
+    """
+
+    def smoothing_avg(
+        values: list[float], coeff: float, max_length: int = None
+    ) -> float:
+        size = (
+            len(values) if max_length is None else min(max_length, len(values))
+        )
+        coefficients = np.power(coeff, np.arange(size))
+        return np.array(values).dot(coefficients).item()
+
+    smoothing_avg_partial = partial(
+        smoothing_avg, coeff=exp, max_length=max_length
+    )
+    data = data.eval(f"{new_col} = {col}.apply(@smoothing_avg_partial)")
+    data = data.sort_values(f"{new_col}", ascending=False)
     return data
