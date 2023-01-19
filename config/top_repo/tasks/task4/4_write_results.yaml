@@ -6,7 +6,7 @@ defaults:
 #   - sql
 data_reader:
   type: core.sharedmemoryreader
-  variables: [top_repos_per_topic, top_repos]
+  variables: [top_repos_per_topic, top_repos, trending]
   behaviors: 
     type: core.concat
     instructions:

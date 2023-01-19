@@ -13,7 +13,7 @@ class Test_1(unittest.TestCase):
     def test_1(self):
         with hydra.initialize(
             version_base=None,
-            config_path="../config/dag/tasks/2_query",
+            config_path="../config/top_repo",
         ):
             # config is relative to a module
             conf = hydra.compose(config_name="main")

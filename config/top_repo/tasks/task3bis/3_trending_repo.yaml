@@ -1,0 +1,25 @@
+defaults:
+  - data_reader: python
+
+data_writer:
+  type: core.sharedmemorywriter
+  variables: trending
+
+transformer:
+  type: core.transformers.pipeline
+  mode: 2
+  transformers:
+    - type: github.trends
+      col: delta
+      new_col: avg
+      max_length: 7
+      exp: .9
+    - type: core.transformers.swissknife
+      dataframe_attr: eval
+      expr: "source='trends'"
+
+
+
+    
+    
+

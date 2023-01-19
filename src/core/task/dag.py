@@ -112,6 +112,16 @@ class TaskDag:
                     )
                 )
             )
+            # rimuovo i nodi con dipendenze non ancora eseguite
+            next_tasks = filter(
+                lambda x: all(
+                    [
+                        self.task_graph.nodes[v].get("visited", False)
+                        for v in self.task_graph.predecessors(x)
+                    ]
+                ),
+                next_tasks,
+            )
 
             for v in next_tasks:
                 self.task_graph.nodes[v]["in_queue"] = True

@@ -1,0 +1,20 @@
+type: sql.reader
+query_or_path: >
+  with 
+  final_tmp as (
+  select full_name, html_url, homepage, topics,
+    insert_date,
+    lag(insert_date) over(partition by full_name order by insert_date desc) as prev_date,
+    -stargazers_count + lag(stargazers_count) over(partition by full_name order by insert_date desc) as star_diff
+  from repos
+  )
+  ,final as (
+    select *, -date_diff('day', cast(prev_date as date) ,cast(insert_date as date)) as date_dff
+    from final_tmp
+    where date_dff is not null
+  )
+  select full_name, html_url,  topics, array_agg(insert_date) as insert_date, array_agg(star_diff) star_diff, array_agg(date_dff) as date_dff,
+    array_agg(star_diff/greatest(date_dff,1)) as delta 
+  from final
+  group by full_name, html_url, topics
+url:  duckdb:///repos.duckdb

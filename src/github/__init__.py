@@ -7,3 +7,4 @@ def initialize():
     factory.register("github.read", g.GitRepoReader)
     factory.register("github.write", g.GitRepoWriter)
     factory.register("github.add_date", g.add_date)
+    factory.register("github.trends", g.get_trending_topics)

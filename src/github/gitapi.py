@@ -28,6 +28,7 @@ class GitRepoWriter(DataWriter):
     def write(self, data: Union[pd.DataFrame, List[pd.DataFrame]]) -> None:
         top_repo_df = data.query("source=='top_repos'")
         top_repo_per_topic_df = data.query("source=='top_repos_topic'")
+        trends_df = data.query("source=='trends'")
         with pd.ExcelWriter(
             f"{arrow.now().format('YYYY-MM-DD')}_{self.filename}_report.xlsx",
             engine="openpyxl",
@@ -40,6 +41,9 @@ class GitRepoWriter(DataWriter):
                 columns=["topics", "source", "insert_date"]
             ).groupby("topic"):
                 topic_df.to_excel(writer, sheet_name=topic, index=False)
+            trends_df[["full_name", "html_url", "avg"]].to_excel(
+                writer, sheet_name="trends", index=False
+            )
 
 
 class GitRepoReader(DataReader):
@@ -160,7 +164,9 @@ def get_trending_topics(
             len(values) if max_length is None else min(max_length, len(values))
         )
         coefficients = np.power(coeff, np.arange(size))
-        return np.array(values).dot(coefficients).item()
+        return (
+            np.array(values).dot(coefficients).item()
+        ) / coefficients.sum().item()
 
     smoothing_avg_partial = partial(
         smoothing_avg, coeff=exp, max_length=max_length
