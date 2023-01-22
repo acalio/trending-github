@@ -7,6 +7,7 @@ query_or_path: >
     lag(insert_date) over(partition by full_name order by insert_date desc) as prev_date,
     -stargazers_count + lag(stargazers_count) over(partition by full_name order by insert_date desc) as star_diff
   from repos
+  where lower(language) = 'python'
   )
   ,final as (
     select *, -date_diff('day', cast(prev_date as date) ,cast(insert_date as date)) as date_dff

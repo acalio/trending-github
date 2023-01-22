@@ -10,7 +10,7 @@ query_or_path: >
           unnest(topics) as topic
     from repos
     where insert_date = (select max(insert_date) from repos)
-      and language='python'
+      and lower(language)='python'
     )
 
     ,top10_topic as (

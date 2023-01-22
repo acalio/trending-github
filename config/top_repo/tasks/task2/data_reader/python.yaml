@@ -9,7 +9,7 @@ query_or_path: >
       topics
     from repos
     where insert_date = (select max(insert_date) from repos)
-      and language = 'python'
+      and lower(language) = 'python'
     order by stargazers_count desc
     limit 50
 url: duckdb:///repos.duckdb
