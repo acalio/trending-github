@@ -18,7 +18,6 @@ class BaseTransformer(ABC):
     """Base class per ogni oggetto transfomer"""
 
     def __call__(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
-
         return self.transform(data, **kwargs)
 
     @abstractmethod

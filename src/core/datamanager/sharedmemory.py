@@ -75,7 +75,6 @@ class SharedMemoryReader(DataReader):
             ), "You must reduce the dataframe"
 
     def read(self) -> Iterator[DataFrame]:
-
         data = [self.shared_memory[v] for v in self.variables]
 
         # risolvo la presenza di eventuali list di list di dataframe

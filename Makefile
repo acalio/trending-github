@@ -20,11 +20,11 @@ test:
 
 docs_view:
 	@echo View API documentation... 
-	pdoc src --http localhost:8080
+	poetry run pdoc src
 
 docs_save:
 	@echo Save documentation to docs... 
-	pdoc src -o docs
+	poetry run pdoc src -o docs
 
 format:
 	find . -type f -name "*.py" -exec echo {} \; -exec black {} \;
