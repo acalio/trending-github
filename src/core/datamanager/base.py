@@ -82,3 +82,32 @@ class DataWriter:
                 da memorizzare nei sink specificati alla creazione dell'oggetto
         """
         raise NotImplementedError()
+
+
+class DataReaderDecorator(DataReader):
+    def __init__(
+        self,
+        *,
+        wrapped_reader: DataReader,
+        behaviors: Optional[
+            Union[Dict[str, Any], List[Dict[str, Any]]]
+        ] = None,
+        **kwargs
+    ):
+        super(DataReaderDecorator, self).__init__(behaviors = behaviors)
+        self.wrapped_reader = wrapped_reader
+
+
+class DataWriterDecorator(DataWriter):
+    def __init__(
+        self,
+        *,
+        wrapped_writer: DataWriter,
+        behaviors: Optional[
+            Union[Dict[str, Any], List[Dict[str, Any]]]
+        ] = None,
+        **kwargs
+        ):
+        super(DataWriterDecorator, self).__init__(behaviors=behaviors)
+        self.wrapped_writer = wrapped_writer
+    

@@ -3,6 +3,9 @@ from pandas import DataFrame
 from typing import Any, Dict, Iterator, List, Optional, Union
 import fsspec
 from src.core.datamanager.base import DataReader, DataWriter
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class BaseSQLReader(DataReader):
@@ -155,6 +158,8 @@ class BaseSQLWriter(DataWriter):
         self.write_args = write_args if write_args is not None else {}
 
     def write(self, data: Union[DataFrame, List[DataFrame]]) -> None:
+        logger.info(f"Writing {len(data)} rows to {self.tables}")
+
         def write_f(df, t, pos=None):
             if isinstance(self.write_args, list):
                 write_args = self.write_args[pos]

@@ -150,4 +150,5 @@ class SQLWriter(BaseSQLWriter):
     def execute_write(
         self, data: pd.DataFrame, destination_table: str, **kwargs
     ) -> None:
-        data.to_sql(name=destination_table, con=self.engine, **kwargs)
+        with self.engine.connect() as conn:
+            data.to_sql(name=destination_table, con=conn, **kwargs)

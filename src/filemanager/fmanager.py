@@ -1,6 +1,9 @@
 import os
+import re
+from copy import copy as copy_copy
 from shutil import copy, move
 from typing import Any, Dict, Iterator, List, Optional, Union
+import pathlib
 
 from pandas import (
     DataFrame,
@@ -11,7 +14,12 @@ from pandas import (
     read_pickle,
 )
 
-from src.core.datamanager.base import DataReader, DataWriter
+from src.core.datamanager.base import (
+    DataReader,
+    DataWriter,
+    DataWriterDecorator,
+    DataReaderDecorator,
+)
 
 
 class FileReader(DataReader):
@@ -183,13 +191,14 @@ class TemplateFileWriter(DataWriter):
             template_path (str): path al file di template
             output_path (str): path in cui salvare il template compilator
             if_sheet_exists (str, optional): Comportamento da adottare nel caso
-                in cui il foglio in cui si scrive dovesse esistere. Defaults to "overlay".
+                in cui il foglio in cui si scrive dovesse esistere. Defaults to "overlay"
             values_dict (Optional[str], optional): Dizionario con la seguente
-                struttura {nome_foglio: {posizione: testo da scrivere}}. Defaults to None.
+                struttura {nome_foglio: {posizione: testo da scrivere}}. Defaults to None
             write_args (Optional[dict], optional): parametri da usare in fase
                 di scrittura sul template. Defaults to None.
-            behaviors (Optional[Union[Dict[str, Any], List[Dict[str, Any]]]], optional): Dizionario,
-                o lista di dizionari contenenti le istruzioni per istanziare i vari Behavior. Defaul
+            behaviors (Optional[Union[Dict[str, Any], List[Dict[str, Any]]]], optional):
+                Dizionario, o lista di dizionari contenenti le istruzioni per istanziare
+                i vari Behavior. Defaul
         """
         super(TemplateFileWriter, self).__init__(behaviors=behaviors)
 
@@ -242,3 +251,108 @@ class TemplateFileWriter(DataWriter):
                         wb[sheet_name][pos] = value
         # move the workbook to the final location
         move(tmp_path, self.output_path)
+
+
+class BatchFileWriterDecorator(DataWriterDecorator):
+    def __init__(
+        self,
+        *,
+        wrapped_writer: DataWriter,
+        behaviors: Optional[
+            Union[Dict[str, Any], List[Dict[str, Any]]]
+        ] = None,
+    ) -> None:
+        super(BatchFileWriterDecorator, self).__init__(
+            wrapped_writer=wrapped_writer,
+            behaviors=behaviors,
+        )
+        # counter da mettere nella desinenza del basename
+        self.counter = 0
+        assert hasattr(
+            self.wrapped_writer, "output_path"
+        ), "Wrapped element does not have output_path attribute"
+
+    def write(self, data: Union[DataFrame, List[DataFrame]]) -> None:
+        def set_basename(path: pathlib.Path) -> str:
+            basename_wcounter = re.sub("\.", f"_{self.counter}.", path.name)
+            return path.with_name(basename_wcounter).as_posix()
+
+        output_path_copy = copy_copy(self.wrapped_writer.output_path)
+        if isinstance(self.wrapped_writer.output_path, str):
+            self.wrapped_writer.output_path = set_basename(
+                pathlib.Path(self.wrapped_writer.output_path)
+            )
+
+        elif isinstance(self.wrapped_writer.output_path, list):
+            for i, path in enumerate(self.wrapped_writer.output_path):
+                self.wrapped_writer.output_path[i] = set_basename(
+                    pathlib.Path(path)
+                )
+
+        self.wrapped_writer.write(data)
+        self.wrapped_writer.output_path = output_path_copy
+        self.counter += 1
+
+
+class BatchFileReaderDecorator(DataReaderDecorator):
+    def __init__(
+        self,
+        *,
+        wrapped_reader: DataWriter,
+        file_regex: str = "_([0-9]+)\.",
+        behaviors: Optional[
+            Union[Dict[str, Any], List[Dict[str, Any]]]
+        ] = None,
+    ) -> None:
+        super(BatchFileReaderDecorator, self).__init__(
+            wrapped_reader=wrapped_reader,
+            behaviors=behaviors,
+        )
+        self.file_regex = file_regex
+        # counter da mettere nella desinenza del basename
+        self.counter = 0
+        assert hasattr(
+            self.wrapped_reader, "input_path"
+        ), "Wrapped element does not have input_path attribute"
+
+    def read(self) -> Iterator[DataFrame]:
+        def get_ordered_list(path: pathlib.Path) -> list[pathlib.Path]:
+            regex = re.sub("\.", self.file_regex, path.name)
+            # prendo la lista di file all'interno dela stessa cartella
+            file_list = path.parent.glob("*")
+            # prendo soltanto i file che matchano la regex
+            matched_file = filter(
+                lambda x: x[1],
+                map(lambda x: (x, re.match(regex, x.name)), file_list),
+            )
+            # ordino sulla base della regex
+            return list(
+                map(
+                    lambda x: x[0],
+                    sorted(matched_file, key=lambda x: int(x[1].groups()[0])),
+                )
+            )
+
+        input_path_copy = copy_copy(self.wrapped_reader.input_path)
+
+        if isinstance(self.wrapped_reader.input_path, str):
+            batch_input_paths = get_ordered_list(pathlib.Path(self.wrapped_reader.input_path))
+            for input_path in batch_input_paths:
+                self.wrapped_reader.input_path = input_path.as_posix()
+                yield from self.wrapped_reader.read()
+        
+        elif isinstance(self.wrapped_reader.input_path, list):
+            # creo una lista di liste 
+            input_paths_list = []
+            for i, path in enumerate(self.wrapped_reader.input_path):
+                input_paths_list.append(get_ordered_list(pathlib.Path(path)))
+            
+            assert len(set([len(x) for x  in input_paths_list]))==1, "Different number of batches"
+            
+            for i in range(len(input_paths_list[0])):
+                for j in range(len(input_paths_list)):
+                    self.wrapped_reader.input_path[j] = input_paths_list[j][i].as_posix()
+
+                yield from self.wrapped_reader.read()
+        
+        self.wrapped_reader.input_path = input_path_copy

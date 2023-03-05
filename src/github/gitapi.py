@@ -8,7 +8,7 @@ import numpy as np
 from functools import partial
 import requests
 import time
-import arrow
+
 
 logger = logging.getLogger(__name__)
 
@@ -66,8 +66,8 @@ class GitRepoReader(DataReader):
 
     def set_stars(self, url: str, min_stars: int, max_stars: int) -> str:
         if "stars:>" in url or "stars:<" in url:
-            url = re.sub("stars:>[0-9]+\+", f"", url)
-            url = re.sub("stars:<[0-9]+\+", f"", url)
+            url = re.sub("stars:>[0-9]+\+", "", url)
+            url = re.sub("stars:<[0-9]+\+", "", url)
         if re.findall("\?q=stars:[0-9]+..[0-9]+", url):
             url = re.sub(
                 "\?q=stars:[0-9]+..[0-9]+",
@@ -111,14 +111,16 @@ class GitRepoReader(DataReader):
     def read(self) -> pd.DataFrame:
         """Legge utilizzando le search api"""
         logger.info("Start download")
-        dfs = []
         for url in self.get_urls():
             while True:
                 logger.info(f"Retrieving: {url}")
                 res_dict = requests.get(url).json()
                 try:
                     items = res_dict["items"]
-                    dfs.append(pd.DataFrame.from_dict(items))
+                    df = pd.DataFrame.from_dict(items)
+                    if not df.empty:
+                        yield df
+                    # dfs.append(pd.DataFrame.from_dict(items))
                 except KeyError:
                     message = res_dict.pop("message", "")
                     if "API rate limit exceeded" in message:
@@ -131,8 +133,6 @@ class GitRepoReader(DataReader):
 
                 url = self.set_page(url)
                 time.sleep(2)
-
-        yield pd.concat(dfs, axis=0)
 
 
 def add_date(
